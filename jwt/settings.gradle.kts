@@ -13,4 +13,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "common-module"
+rootProject.name = "jwt"
