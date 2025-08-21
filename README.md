@@ -1,2 +1,2 @@
 # common-module
-공통 Response API, Advice Controller, Custom Exception 정의
+공통 모듈 정의
