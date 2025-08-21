@@ -14,3 +14,4 @@ pluginManagement {
 }
 
 rootProject.name = "common-module"
+include("jwt", "controller-advice")
