@@ -1,0 +1,71 @@
+name: Publish Modules
+
+on:
+  push:
+    branches: [ feature/apply-ci-cd ]
+
+env:
+  ## 워크플로우가 진행중일 때 생성되는 Default Token.
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed-modules: ${{ steps.changes.outputs.changed-modules }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed modules
+        id: changes
+        run: |
+          MODULES=$(grep -oP 'include\("\K[^"]+' settings.gradle.kts | tr '\n' ' ')
+          CHANGED_MODULES=()
+          
+          for module in $MODULES; do
+            module=$(echo $module | sed 's/,$//')
+            if git diff --name-only HEAD~1 HEAD | grep -q "^${module}/"; then
+              CHANGED_MODULES+=("\"$module\"")
+            fi
+          done
+          
+        
+          if [ ${#CHANGED_MODULES[@]} -gt 0 ]; then
+            CHANGED_JSON="[$(IFS=,; echo "${CHANGED_MODULES[*]}")]"
+          else
+            CHANGED_JSON="[]"
+          fi
+          
+          echo "changed-modules=$CHANGED_JSON" >> $GITHUB_OUTPUT
+          echo "Changed modules: $CHANGED_JSON"
+
+  publish:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed-modules != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ${{ fromJSON(needs.detect-changes.outputs.changed-modules) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Publish ${{ matrix.module }} module
+        run: ./gradlew :${{ matrix.module }}:publish
+        env:
+          GITHUB_PLUGIN_USER: ${{ secrets.GH_PLUGIN_USER }}
+          GITHUB_PLUGIN_TOKEN: ${{ secrets.GH_PLUGIN_TOKEN }}
+          GITHUB_MODULE_USER: ${{ secrets.GH_MODULE_USER }}
+          GITHUB_MODULE_TOKEN: ${{ secrets.GH_MODULE_TOKEN }}
