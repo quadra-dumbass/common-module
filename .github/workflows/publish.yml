@@ -13,66 +13,53 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed-modules: ${{ steps.changes.outputs.changed-modules }}
-      has-changes: ${{ steps.changes.outputs.has-changes }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Detect changed modules
         id: changes
-        shell: bash
         run: |
-          set -euo pipefail
-
-        
-          MODULES=$(grep -oP 'include\(":\K[^"]+' settings.gradle.kts | tr '\n' ' ')
-
-        
-          BASE_SHA="${{ github.event.before }}"
-          HEAD_SHA="${{ github.sha }}"
-
-        
-          if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+          MODULES=$(grep -oP 'include\("\K[^"]+' settings.gradle.kts | tr '\n' ' ')
+          CHANGED_MODULES=()
           
-            CHANGED_FILES=$(git ls-tree -r --name-only "$HEAD_SHA")
+          echo "Detected modules: $MODULES"
+          
+          # 변경된 파일 목록 확인
+          if [ "${{ github.event_name }}" == "push" ]; then
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
           else
-            CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
           fi
-
+          
           echo "Changed files:"
           echo "$CHANGED_FILES"
-
-        
-          CHANGED_MODULES=()
+          
           for module in $MODULES; do
-            # settings 파싱 잔여 쉼표 제거(예방적)
-            module=$(echo "$module" | sed 's/,$//')
-            if echo "$CHANGED_FILES" | grep -qE "^${module}/"; then
+            module=$(echo $module | sed 's/,$//' | xargs)
+            echo "Checking module: $module"
+            
+            if echo "$CHANGED_FILES" | grep -q "^${module}/"; then
+              echo "Module $module has changes"
               CHANGED_MODULES+=("\"$module\"")
+            else
+              echo "Module $module has no changes"
             fi
           done
-
+          
           if [ ${#CHANGED_MODULES[@]} -gt 0 ]; then
             CHANGED_JSON="[$(IFS=,; echo "${CHANGED_MODULES[*]}")]"
-            HAS_CHANGES=true
           else
             CHANGED_JSON="[]"
-            HAS_CHANGES=false
           fi
-
-          echo "changed-modules=$CHANGED_JSON" >> "$GITHUB_OUTPUT"
-          echo "has-changes=$HAS_CHANGES" >> "$GITHUB_OUTPUT"
-
+          
+          echo "changed-modules=$CHANGED_JSON" >> $GITHUB_OUTPUT
           echo "Changed modules: $CHANGED_JSON"
-          echo "Has changes: $HAS_CHANGES"
-  
-  
 
   publish:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.has-changes == 'true' }}
+    if: needs.detect-changes.outputs.changed-modules != '[]'
     runs-on: ubuntu-latest
     strategy:
       matrix:
