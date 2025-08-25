@@ -21,7 +21,7 @@ jobs:
       - name: Detect changed modules
         id: changes
         run: |
-          MODULES=$(grep -oP 'include\("\K[^"]+' settings.gradle.kts | tr '\n' ' ')
+          MODULES=$(grep 'include(' settings.gradle.kts | sed 's/.*include(//' | sed 's/).*//' | sed 's/"//g' | tr ',' ' ')
           CHANGED_MODULES=()
           
           echo "Detected modules: $MODULES"
