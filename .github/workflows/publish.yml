@@ -24,14 +24,30 @@ jobs:
           MODULES=$(grep -oP 'include\("\K[^"]+' settings.gradle.kts | tr '\n' ' ')
           CHANGED_MODULES=()
           
+          echo "Detected modules: $MODULES"
+          
+          # 변경된 파일 목록 확인
+          if [ "${{ github.event_name }}" == "push" ]; then
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          fi
+          
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
           for module in $MODULES; do
-            module=$(echo $module | sed 's/,$//')
-            if git diff --name-only HEAD~1 HEAD | grep -q "^${module}/"; then
+            module=$(echo $module | sed 's/,$//' | xargs)
+            echo "Checking module: $module"
+            
+            if echo "$CHANGED_FILES" | grep -q "^${module}/"; then
+              echo "Module $module has changes"
               CHANGED_MODULES+=("\"$module\"")
+            else
+              echo "Module $module has no changes"
             fi
           done
           
-        
           if [ ${#CHANGED_MODULES[@]} -gt 0 ]; then
             CHANGED_JSON="[$(IFS=,; echo "${CHANGED_MODULES[*]}")]"
           else
