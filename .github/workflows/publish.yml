@@ -18,7 +18,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Detect changed modules
         id: changes
         run: |
@@ -61,6 +60,9 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
       - name: Publish ${{ matrix.module }} module
         run: ./gradlew :${{ matrix.module }}:publish
