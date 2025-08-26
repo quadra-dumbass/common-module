@@ -1,4 +1,4 @@
-package com.quadra.jwt;
+package com.quadra.common.jwt;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

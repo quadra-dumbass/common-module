@@ -1,8 +1,8 @@
 plugins {
-    id("com.quadra.spring-library-conventions") version "1.1.0"
+    id("com.quadra.spring-library-conventions")
 }
 
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0-SNAPSHOT"
 
 dependencies {
 

@@ -1,17 +1,17 @@
-package com.quadra.jwt;
+package com.quadra.common.jwt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
 import java.util.Date;
 
-public class JwtProvider {
+public class JwtUtils {
     private final String accessSecret;
     private final String refreshSecret;
     private final int accessExpiresInSeconds;
     private final int refreshExpiresInSeconds;
 
-    public JwtProvider(JwtProperties jwtProperties) {
+    public JwtUtils(JwtProperties jwtProperties) {
         this(jwtProperties.getAccess().getSecret(),
                 jwtProperties.getRefresh().getSecret(),
                 jwtProperties.getAccess().getExpires(),
@@ -19,7 +19,7 @@ public class JwtProvider {
         );
     }
 
-    public JwtProvider(String accessSecret, String refreshSecret, int accessExpiresInSeconds, int refreshExpiresInSeconds) {
+    public JwtUtils(String accessSecret, String refreshSecret, int accessExpiresInSeconds, int refreshExpiresInSeconds) {
         this.accessSecret = accessSecret;
         this.refreshSecret = refreshSecret;
         this.accessExpiresInSeconds = accessExpiresInSeconds;

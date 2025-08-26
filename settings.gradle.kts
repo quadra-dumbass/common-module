@@ -11,7 +11,10 @@ pluginManagement {
             }
         }
     }
+    plugins {
+        id("com.quadra.spring-library-conventions") version "1.1.0"
+    }
 }
 
 rootProject.name = "common-module"
-include("jwt", "controller-advice")
+include("jwt", "controller-advice", "cookie")
